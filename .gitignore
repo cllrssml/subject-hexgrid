@@ -1,12 +1,35 @@
-# Pixi environments (large, platform-specific — Desktop runs its own pixi install)
-.pixi/
+# Pixi environments
+.pixi
 
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
 *.egg-info/
 .eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Jupyter
+.ipynb_checkpoints
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Local scratch
+.tmp
+.scratch

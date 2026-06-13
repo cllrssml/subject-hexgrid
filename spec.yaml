@@ -1,0 +1,415 @@
+id: subject_hexgrid
+
+requirements:
+  - name: "ecoscope-platform"
+    version: ">=2.11.3,<3"
+    channel: "https://repo.prefix.dev/ecoscope-workflows/"
+  - name: "hex-tasks"
+    path: "/home/sam/Ecoscope_Projects/hex-tasks"
+    editable: true
+
+workflow:
+  # --- Metadata ---------------------------------------------------------------
+  - name: Workflow Details
+    id: workflow_details
+    task: set_workflow_details
+
+  # --- EarthRanger connection -------------------------------------------------
+  - name: Data Source
+    id: er_client_name
+    task: set_er_connection
+
+  # --- Time range -------------------------------------------------------------
+  - name: Time Range
+    id: time_range
+    task: set_time_range
+    partial:
+      time_format: '%d %b %Y %H:%M:%S'
+
+  # --- Subject group name -----------------------------------------------------
+  - name: Subject Group
+    id: subject_group
+    task: set_subject_group_name
+
+  # --- Pull GPS fixes for the chosen subject group ---------------------------
+  - name: Subject Group Observations
+    id: get_observations
+    task: get_subjectgroup_observations
+    partial:
+      client: ${{ workflow.er_client_name.return }}
+      time_range: ${{ workflow.time_range.return }}
+      subject_group_name: ${{ workflow.subject_group.return }}
+      raise_on_empty: true
+      include_details: false
+      include_subjectsource_details: false
+      filter: "clean"
+
+  # --- Optional boundary name (leave blank to skip clip + outline) -----------
+  - name: Boundary Group Name
+    id: boundary_name
+    task: set_boundary_group_name
+
+  # --- Optional overlay name (leave blank to skip overlay layer) -------------
+  - name: Overlay Layer Group Name
+    id: overlay_name
+    task: set_overlay_group_name
+
+  # --- Fetch boundary from ER (skipped if name is empty) --------------------
+  - name: Boundary Features
+    id: boundary_features
+    task: get_spatial_features_group
+    skipif:
+      conditions:
+        - any_dependency_is_empty_string
+    partial:
+      client: ${{ workflow.er_client_name.return }}
+      spatial_features_group_name: ${{ workflow.boundary_name.return }}
+
+  # --- Fetch overlay from ER (skipped if name is empty) --------------------
+  - name: Overlay Features
+    id: overlay_features
+    task: get_spatial_features_group
+    skipif:
+      conditions:
+        - any_dependency_is_empty_string
+    partial:
+      client: ${{ workflow.er_client_name.return }}
+      spatial_features_group_name: ${{ workflow.overlay_name.return }}
+
+  # --- Colour scheme picker ---------------------------------------------------
+  - name: Colour Scheme
+    id: colormap_picker
+    task: set_colormap
+
+  # --- Basemap picker ---------------------------------------------------------
+  - name: Base Maps
+    id: base_maps
+    task: set_base_maps
+
+  # --- Hexagon size (H3 resolution) picker ------------------------------------
+  - name: Hexagon Size
+    id: h3_resolution
+    task: set_h3_resolution
+
+  # --- Bin observations into H3 hexagons (clip to boundary if provided) ------
+  - name: Hex Bins
+    id: hex_bins
+    task: hex_bin_observations
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - all_geometry_are_none
+    partial:
+      geodataframe: ${{ workflow.get_observations.return }}
+      boundary: ${{ workflow.boundary_features.return }}
+      h3_resolution: ${{ workflow.h3_resolution.return }}
+      count_column: "count"
+
+  # --- Classify fix counts (Natural Breaks, k is a form field) ---------------
+  - name: Classify Counts
+    id: classify_counts
+    task: classify_hex_bins
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      geodataframe: ${{ workflow.hex_bins.return }}
+
+  # --- Apply colormap to class indices ----------------------------------------
+  - name: Hex Colormap
+    id: hex_colormap
+    task: apply_color_map
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      df: ${{ workflow.classify_counts.return }}
+      input_column_name: count_class
+      output_column_name: count_colors
+      colormap: ${{ workflow.colormap_picker.return }}
+
+  # --- Hex polygon layer with auto-contrasting outlines -----------------------
+  - name: Hex Layer
+    id: hex_layer
+    task: create_hex_polygon_layer
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+        - all_geometry_are_none
+    partial:
+      geodataframe: ${{ workflow.hex_colormap.return }}
+      fill_color_column: count_colors
+      label_column: count_range
+      get_line_width: 1.0
+      opacity: 0.9
+      tooltip_columns:
+        - count
+
+  # --- Normalize boundary geometry to polygon (ER may store as LineString) ---
+  - name: Boundary Polygon
+    id: boundary_polygon
+    task: normalize_boundary_geometry
+    skipif:
+      conditions:
+        - any_dependency_skipped
+        - any_is_empty_df
+    partial:
+      geodataframe: ${{ workflow.boundary_features.return }}
+
+  # --- Boundary outline layer (skipped if no boundary was provided) ----------
+  - name: Boundary Layer
+    id: boundary_layer
+    task: create_polygon_layer
+    skipif:
+      conditions:
+        - any_dependency_skipped
+        - any_is_empty_df
+    partial:
+      geodataframe: ${{ workflow.boundary_polygon.return }}
+      legend: ~
+      tooltip_columns: []
+      layer_style:
+        filled: false
+        stroked: true
+        get_line_color: "#FFFFFF"
+        get_line_width: 3
+        line_width_units: pixels
+
+  # --- Overlay layer: auto-detects geometry type (lines or polygons) ---------
+  - name: Overlay Layer
+    id: overlay_layer
+    task: create_overlay_layer
+    skipif:
+      conditions:
+        - any_dependency_skipped
+        - any_is_empty_df
+    partial:
+      geodataframe: ${{ workflow.overlay_features.return }}
+      get_color: "#FF8C00"
+      get_width: 2.0
+
+  # --- Combine hex + optional boundary + optional overlay layers -------------
+  - name: Combined Layers
+    id: combined_layers
+    task: combine_map_layers
+    skipif:
+      conditions:
+        - any_is_empty_df
+    partial:
+      hex_layer: ${{ workflow.hex_layer.return }}
+      boundary_layer: ${{ workflow.boundary_layer.return }}
+      overlay_layer: ${{ workflow.overlay_layer.return }}
+
+  # --- Draw ecomap ------------------------------------------------------------
+  - name: Subject Hexgrid Map
+    id: hexgrid_map
+    task: draw_ecomap
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      title: null
+      tile_layers: ${{ workflow.base_maps.return }}
+      north_arrow_style:
+        placement: top-left
+      legend_style:
+        title: Fix Count
+        placement: bottom-right
+      static: false
+      max_zoom: 20
+      geo_layers: ${{ workflow.combined_layers.return }}
+
+  # --- Persist map HTML -------------------------------------------------------
+  - name: Persist Map
+    id: hexgrid_map_url
+    task: persist_text
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      filename_suffix: hexgrid
+      text: ${{ workflow.hexgrid_map.return }}
+
+  # --- Export classified hex bins to GeoPackage (written to results dir) -----
+  - name: Export Hex Bins
+    id: export_hex_bins
+    task: export_geodataframe
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      geodataframe: ${{ workflow.hex_colormap.return }}
+      root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+      filename_suffix: hexgrid_hexbins
+      layer_name: hexgrid
+
+  # --- Stat values (shown as big-number boxes above the map) ------------------
+  - name: Stat - Total Fixes
+    id: stat_fixes
+    task: count_observations
+    skipif:
+      conditions:
+        - any_is_empty_df
+    partial:
+      geodataframe: ${{ workflow.get_observations.return }}
+
+  - name: Stat - Subjects
+    id: stat_subjects
+    task: count_subjects
+    skipif:
+      conditions:
+        - any_is_empty_df
+    partial:
+      geodataframe: ${{ workflow.get_observations.return }}
+
+  - name: Stat - Hexbins
+    id: stat_hexbins
+    task: count_hexbins
+    skipif:
+      conditions:
+        - any_is_empty_df
+        - any_dependency_skipped
+    partial:
+      geodataframe: ${{ workflow.hex_colormap.return }}
+
+  # --- H3 resolution label ---------------------------------------------------
+  - name: Stat - H3 Resolution Label
+    id: h3_resolution_label
+    task: format_h3_resolution
+    skipif:
+      conditions: []
+    partial:
+      h3_resolution: ${{ workflow.h3_resolution.return }}
+
+  # --- Stat widgets -----------------------------------------------------------
+  - name: Widget - Total GPS Fixes
+    id: widget_fixes
+    task: create_single_value_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Total Locations
+      data: ${{ workflow.stat_fixes.return }}
+      decimal_places: 0
+
+  - name: Widget - Subjects Tracked
+    id: widget_subjects
+    task: create_single_value_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Subjects Tracked
+      data: ${{ workflow.stat_subjects.return }}
+      decimal_places: 0
+
+  - name: Widget - Active Hexbins
+    id: widget_hexbins
+    task: create_single_value_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Active Hexbins
+      data: ${{ workflow.stat_hexbins.return }}
+      decimal_places: 0
+
+  - name: Widget - Map Resolution
+    id: widget_h3_resolution
+    task: create_text_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Resolution
+      data: ${{ workflow.h3_resolution_label.return }}
+
+  # --- Format optional names for display ------------------------------------
+  - name: Stat - Boundary Display Name
+    id: stat_boundary_fmt
+    task: format_optional_name
+    skipif:
+      conditions: []
+    partial:
+      name: ${{ workflow.boundary_name.return }}
+
+  - name: Stat - Overlay Display Name
+    id: stat_overlay_fmt
+    task: format_optional_name
+    skipif:
+      conditions: []
+    partial:
+      name: ${{ workflow.overlay_name.return }}
+
+  # --- Context text widgets (subject group, boundary, overlay) ---------------
+  - name: Widget - Subject Group
+    id: widget_subject_group
+    task: create_text_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Group
+      data: ${{ workflow.subject_group.return }}
+
+  - name: Widget - Boundary
+    id: widget_boundary
+    task: create_text_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Boundary
+      data: ${{ workflow.stat_boundary_fmt.return }}
+
+  - name: Widget - Overlay Layer
+    id: widget_overlay
+    task: create_text_widget_single_view
+    skipif:
+      conditions:
+        - any_dependency_skipped
+    partial:
+      title: Overlay
+      data: ${{ workflow.stat_overlay_fmt.return }}
+
+  # --- Map widget -------------------------------------------------------------
+  - name: Map Widget
+    id: map_widget
+    task: create_map_widget_single_view
+    skipif:
+      conditions:
+        - never
+    partial:
+      title: Subject Hexgrid Map
+      data: ${{ workflow.hexgrid_map_url.return }}
+
+  # --- Dashboard --------------------------------------------------------------
+  - name: Dashboard
+    id: dashboard
+    task: gather_dashboard
+    partial:
+      details: ${{ workflow.workflow_details.return }}
+      widgets:
+        - ${{ workflow.widget_fixes.return }}
+        - ${{ workflow.widget_subjects.return }}
+        - ${{ workflow.widget_hexbins.return }}
+        - ${{ workflow.widget_h3_resolution.return }}
+        - ${{ workflow.widget_subject_group.return }}
+        - ${{ workflow.widget_boundary.return }}
+        - ${{ workflow.widget_overlay.return }}
+        - ${{ workflow.map_widget.return }}
+      time_range: ${{ workflow.time_range.return }}
+
+task-instance-defaults:
+  skipif:
+    conditions:
+      - any_is_empty_df
+      - any_dependency_skipped

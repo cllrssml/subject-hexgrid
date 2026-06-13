@@ -1,0 +1,33 @@
+{
+  "workflow_details": {
+    "name": "Subject Hexgrid",
+    "description": "H3 hexagonal subject coverage map"
+  },
+  "er_client_name": {
+    "data_source": {
+      "name": "CFW"
+    }
+  },
+  "time_range": {
+    "since": "2026-05-01T00:00:00",
+    "until": "2026-05-31T23:59:59"
+  },
+  "subject_group": {
+    "group_name": "<subject group name>"
+  },
+  "boundary_name": {
+    "group_name": ""
+  },
+  "overlay_name": {
+    "group_name": ""
+  },
+  "h3_resolution": {
+    "h3_resolution": 7
+  },
+  "classify_counts": {
+    "k": 5
+  },
+  "colormap_picker": {
+    "colormap": "viridis"
+  }
+}

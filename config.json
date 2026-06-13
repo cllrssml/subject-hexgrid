@@ -5,7 +5,7 @@
   },
   "er_client_name": {
     "data_source": {
-      "name": "CFW"
+      "name": "<your-data-source>"
     }
   },
   "time_range": {

@@ -74,7 +74,16 @@
         "group_name": {
           "title": "Subject Group Name",
           "type": "string",
-          "description": "Name of the EarthRanger subject group to analyse (e.g. 'Rhinos - All'). Find it in ER under Admin \u2192 Subject Groups. The name must match exactly as it appears in EarthRanger."
+          "description": "Name of the EarthRanger subject group to analyse (e.g. 'Rhinos - All'). Find it in ER under Admin \u2192 Subject Groups. The name must match exactly as it appears in EarthRanger.",
+          "ecoscope:transform": [
+            {
+              "transformer": "EarthRangerEnumResolver",
+              "transformer_kws": {
+                "type": "subject_group_name",
+                "depends_on": "properties.er_client_name.properties.data_source.properties.name"
+              }
+            }
+          ]
         }
       },
       "required": [
@@ -90,7 +99,16 @@
           "default": "",
           "title": "Boundary Group Name",
           "type": "string",
-          "description": "Name of the EarthRanger spatial features group to use as the clip boundary (e.g. 'Park Boundary'). Find it in ER under Admin \u2192 Map Layers \u2192 Feature Groups. Leave blank to show all hexbins without clipping."
+          "description": "Name of the EarthRanger spatial features group to use as the clip boundary (e.g. 'Park Boundary'). Find it in ER under Admin \u2192 Map Layers \u2192 Feature Groups. Leave blank to show all hexbins without clipping.",
+          "ecoscope:transform": [
+            {
+              "transformer": "EarthRangerEnumResolver",
+              "transformer_kws": {
+                "type": "spatial_feature_group",
+                "depends_on": "properties.er_client_name.properties.data_source.properties.name"
+              }
+            }
+          ]
         }
       },
       "type": "object",
@@ -104,7 +122,16 @@
           "default": "",
           "title": "Overlay Layer Group Name",
           "type": "string",
-          "description": "Name of an EarthRanger spatial features group to display as an extra layer on top of the map (e.g. 'Roads', 'Fencelines', 'Water Sources'). Find it in ER under Admin \u2192 Map Layers \u2192 Feature Groups. Leave blank to add no overlay layer."
+          "description": "Name of an EarthRanger spatial features group to display as an extra layer on top of the map (e.g. 'Roads', 'Fencelines', 'Water Sources'). Find it in ER under Admin \u2192 Map Layers \u2192 Feature Groups. Leave blank to add no overlay layer.",
+          "ecoscope:transform": [
+            {
+              "transformer": "EarthRangerEnumResolver",
+              "transformer_kws": {
+                "type": "spatial_feature_group",
+                "depends_on": "properties.er_client_name.properties.data_source.properties.name"
+              }
+            }
+          ]
         }
       },
       "type": "object",

@@ -5,8 +5,26 @@ requirements:
     version: ">=2.11.3,<3"
     channel: "https://repo.prefix.dev/ecoscope-workflows/"
   - name: "hex-tasks"
-    path: "../hex-tasks"
+    path: "/home/sam/Ecoscope_Projects/hex-tasks"
     editable: true
+
+rjsf-overrides:
+  properties:
+    subject_group.properties.group_name.ecoscope:transform:
+      - transformer: EarthRangerEnumResolver
+        transformer_kws:
+          type: subject_group_name
+          depends_on: properties.er_client_name.properties.data_source.properties.name
+    boundary_name.properties.group_name.ecoscope:transform:
+      - transformer: EarthRangerEnumResolver
+        transformer_kws:
+          type: spatial_feature_group
+          depends_on: properties.er_client_name.properties.data_source.properties.name
+    overlay_name.properties.group_name.ecoscope:transform:
+      - transformer: EarthRangerEnumResolver
+        transformer_kws:
+          type: spatial_feature_group
+          depends_on: properties.er_client_name.properties.data_source.properties.name
 
 workflow:
   # --- Metadata ---------------------------------------------------------------

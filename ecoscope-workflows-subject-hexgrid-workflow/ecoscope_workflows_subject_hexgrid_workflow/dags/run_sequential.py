@@ -10,6 +10,7 @@ from ecoscope.platform.tasks.io import (
 from ecoscope.platform.tasks.io import (
     get_subjectgroup_observations as get_subjectgroup_observations,
 )
+from ecoscope.platform.tasks.io import persist_df as persist_df
 from ecoscope.platform.tasks.io import persist_text as persist_text
 from ecoscope.platform.tasks.io import set_er_connection as set_er_connection
 from ecoscope.platform.tasks.results import (
@@ -42,7 +43,6 @@ from hex_tasks import count_observations as count_observations
 from hex_tasks import count_subjects as count_subjects
 from hex_tasks import create_hex_polygon_layer as create_hex_polygon_layer
 from hex_tasks import create_overlay_layer as create_overlay_layer
-from hex_tasks import export_geodataframe as export_geodataframe
 from hex_tasks import format_h3_resolution as format_h3_resolution
 from hex_tasks import format_optional_name as format_optional_name
 from hex_tasks import hex_bin_observations as hex_bin_observations
@@ -510,7 +510,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     export_hex_bins = (
-        task(export_geodataframe)
+        task(persist_df)
         .validate()
         .set_task_instance_id("export_hex_bins")
         .handle_errors()
@@ -523,10 +523,10 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            geodataframe=hex_colormap,
+            df=hex_colormap,
             root_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            filename_suffix="hexgrid_hexbins",
-            layer_name="hexgrid",
+            filename="hexgrid_hexbins",
+            filetype="gpkg",
             **(params.get("export_hex_bins") or {}),
         )
         .call()

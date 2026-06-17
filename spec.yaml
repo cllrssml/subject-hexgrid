@@ -239,16 +239,16 @@ workflow:
   # --- Export classified hex bins to GeoPackage (written to results dir) -----
   - name: Export Hex Bins
     id: export_hex_bins
-    task: export_geodataframe
+    task: persist_df
     skipif:
       conditions:
         - any_is_empty_df
         - any_dependency_skipped
     partial:
-      geodataframe: ${{ workflow.hex_colormap.return }}
+      df: ${{ workflow.hex_colormap.return }}
       root_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
-      filename_suffix: hexgrid_hexbins
-      layer_name: hexgrid
+      filename: hexgrid_hexbins
+      filetype: gpkg
 
   # --- Stat values (shown as big-number boxes above the map) ------------------
   - name: Stat - Total Fixes

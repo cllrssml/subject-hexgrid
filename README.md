@@ -1,5 +1,7 @@
 # Subject H3 Hexgrid Workflow
 
+**Version 1.0.0** · Works on Ecoscope Desktop (Windows and macOS) and Ecoscope Web
+
 ## Introduction
 
 This workflow visualises the spatial distribution of a wildlife subject group from EarthRanger as an H3 hexagonal grid map. It answers the question: *where are my tracked animals spending their time?*
@@ -25,7 +27,7 @@ This workflow visualises the spatial distribution of a wildlife subject group fr
 
 Before using this workflow, you need:
 
-1. **Ecoscope Desktop** installed on your computer
+1. **Ecoscope Desktop** installed on your computer (Windows or macOS)
    - If you haven't installed it yet, please follow the installation instructions for Ecoscope Desktop
 
 2. **EarthRanger Data Source** configured in Ecoscope Desktop
@@ -86,6 +88,7 @@ The EarthRanger subject group to map.
   - Example: `"Elephants - Northern Herd"`
   - Find it in EarthRanger under **Admin → Subject Groups**
   - The name must match exactly as it appears in EarthRanger
+  - **On Ecoscope Web:** this field shows a live dropdown populated from your connected ER instance — just pick from the list
 
 #### 5. Boundary Group Name *(optional)*
 Clip the hexbin map to a spatial boundary from EarthRanger.
@@ -94,6 +97,7 @@ Clip the hexbin map to a spatial boundary from EarthRanger.
   - Example: `"Park Boundary"` or `"Northern Zone"`
   - Find it in EarthRanger under **Admin → Map Layers → Feature Groups**
   - Leave **blank** to show hexbins across the full extent of the data without clipping
+  - **On Ecoscope Web:** this field shows a live dropdown of your ER spatial feature groups
 
 When a boundary is provided:
 - Hexbins are clipped to the boundary polygon
@@ -109,6 +113,7 @@ Display an additional reference layer on the map.
   - Leave **blank** to add no overlay layer
   - Works with mixed geometry groups (e.g. a group containing both fencelines and boundary polygons)
   - Overlay features are drawn in orange
+  - **On Ecoscope Web:** this field shows a live dropdown of your ER spatial feature groups
 
 #### 7. Colour Scheme
 Choose the colour palette for the hexbin density map.

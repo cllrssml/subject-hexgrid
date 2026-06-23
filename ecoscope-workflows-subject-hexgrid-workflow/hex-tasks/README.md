@@ -1,6 +1,8 @@
 # hex-tasks
 
-A custom task package for [EcoScope Platform SDK](https://ecoscope.io/en/stable/platform-sdk/) workflows. Provides H3 hexagonal binning, classification, layer styling, and supporting tasks used across EcoScope Desktop workflows.
+> **Bundled package** — `hex-tasks` is included directly inside the [`subject-hexgrid`](https://github.com/cllrssml/subject-hexgrid) workflow repository. The former standalone `hex-tasks` repository has been archived. Users installing via `subject-hexgrid` get this package automatically.
+
+A custom task package for [EcoScope Platform SDK](https://ecoscope.io/en/stable/platform-sdk/) workflows. Provides H3 hexagonal binning, classification, layer styling, and supporting tasks for the subject-hexgrid workflow.
 
 ## Tasks
 

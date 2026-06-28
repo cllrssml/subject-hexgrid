@@ -2,8 +2,11 @@ id: subject_hexgrid
 
 requirements:
   - name: "ecoscope-platform"
-    version: ">=2.11.3,<3"
+    version: ">=2.15.0,<2.16.0"
     channel: "https://repo.prefix.dev/ecoscope-workflows/"
+  - name: pydeck
+    version: "0.9.2"
+    channel: conda-forge
   - name: "hex-tasks"
     path: "/home/sam/Ecoscope_Projects/hex-tasks"
     editable: true
@@ -60,7 +63,6 @@ workflow:
       raise_on_empty: true
       include_details: false
       include_subjectsource_details: false
-      filter: "clean"
 
   # --- Optional boundary name (leave blank to skip clip + outline) -----------
   - name: Boundary Group Name

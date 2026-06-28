@@ -171,7 +171,6 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             raise_on_empty=True,
             include_details=False,
             include_subjectsource_details=False,
-            filter="clean",
             **(params.get("get_observations") or {}),
         )
         .call()
